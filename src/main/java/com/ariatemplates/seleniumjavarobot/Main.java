@@ -17,6 +17,7 @@ package com.ariatemplates.seleniumjavarobot;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -40,8 +41,9 @@ public class Main {
             capabilities.setBrowserName(BrowserType.FIREFOX);
         }
         seleniumJavaRobot.url = "http://localhost:7777/__attester__/slave.html";
+        String seleniumServer = null;
         String usageString = String
-                .format("Usage: selenium-java-robot [options]\nOptions:\n  --auto-restart\n  --url <url> [default: %s]\n  --browser <browser> [default: %s, accepted values: %s]\n  -DpropertyName=value\n  -CwebDriverCapability=value",
+                .format("Usage: selenium-java-robot [options]\nOptions:\n  --auto-restart\n  --url <url> [default: %s]\n  --browser <browser> [default: %s, accepted values: %s]\n  --selenium-server <server-url>\n  -DpropertyName=value\n  -CwebDriverCapability=value",
                         seleniumJavaRobot.url, capabilities.getBrowserName(), BROWSERS_LIST.toString());
         for (int i = 0, l = args.length; i < l; i++) {
             String curParam = args[i];
@@ -54,6 +56,9 @@ public class Main {
                 i++;
             } else if ("--url".equalsIgnoreCase(curParam) && i + 1 < l) {
                 seleniumJavaRobot.url = args[i + 1];
+                i++;
+            } else if ("--selenium-server".equalsIgnoreCase(curParam) && i + 1 < l) {
+                seleniumServer = args[i + 1];
                 i++;
             } else if ("--auto-restart".equalsIgnoreCase(curParam)) {
                 seleniumJavaRobot.autoRestart = true;
@@ -78,7 +83,11 @@ public class Main {
                 }
             }
         }
-        seleniumJavaRobot.robotizedBrowserFactory = LocalRobotizedBrowserFactory.createRobotizedWebDriverFactory(capabilities);
+        if (seleniumServer != null) {
+            seleniumJavaRobot.robotizedBrowserFactory = new RemoteRobotizedBrowserFactory(new URL(seleniumServer), capabilities);
+        } else {
+            seleniumJavaRobot.robotizedBrowserFactory = LocalRobotizedBrowserFactory.createRobotizedWebDriverFactory(capabilities);
+        }
         seleniumJavaRobot.start();
         closeOnStreamEnd(seleniumJavaRobot, System.in);
         closeOnProcessEnd(seleniumJavaRobot);
