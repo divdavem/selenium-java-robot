@@ -68,6 +68,11 @@ Different Selenium drivers use different Java system properties. Please refer to
 * [Safari](https://code.google.com/p/selenium/wiki/SafariDriver)
 * [Internet Explorer](https://code.google.com/p/selenium/wiki/InternetExplorerDriver)
 
+**`-CwebDriverCapability=value`**
+
+This option allows to set a WebDriver capability. This parameter can be repeated multiple times to set different capabilities.
+Please refer to the [selenium documentation](https://code.google.com/p/selenium/wiki/DesiredCapabilities).
+
 ## Calibration
 
 Once the *Selenium Java Robot* starts, it first tries to detect the position of the viewport inside the browser window by displaying

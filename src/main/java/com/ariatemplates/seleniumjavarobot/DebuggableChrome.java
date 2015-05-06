@@ -19,20 +19,23 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class DebuggableChrome implements IBrowser {
+    public final static String CAPABILITY = "seleniumjavarobot.chrome.enabledebugextension";
 
     private final RemoteWebDriver webdriver;
 
-    public DebuggableChrome() {
+    public DebuggableChrome(Capabilities capabilities) {
         ChromeOptions options = new ChromeOptions();
         String debugExtension = System.getProperty("seleniumjavarobot.chrome.debugextension");
         if (debugExtension == null || !new File(debugExtension).isDirectory()) {
@@ -40,7 +43,9 @@ public class DebuggableChrome implements IBrowser {
         }
         options.addArguments("load-extension=" + debugExtension);
         options.addArguments("start-maximized");
-        webdriver = new ChromeDriver(options);
+        DesiredCapabilities desiredCapabilities = new DesiredCapabilities(capabilities);
+        desiredCapabilities.setCapability(ChromeOptions.CAPABILITY, options);
+        webdriver = new ChromeDriver(desiredCapabilities);
         // waits for the extension page to be loaded:
         (new WebDriverWait(webdriver, 10)).until(ExpectedConditions.presenceOfElementLocated(By.id("selenium-java-robot")));
         webdriver.manage().timeouts().setScriptTimeout(1, TimeUnit.DAYS);

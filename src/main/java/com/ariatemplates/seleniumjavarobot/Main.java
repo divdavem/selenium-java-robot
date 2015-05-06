@@ -24,28 +24,33 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.exec.OS;
 import org.openqa.selenium.remote.BrowserType;
+import org.openqa.selenium.remote.DesiredCapabilities;
 
 public class Main {
     public final static List<String> BROWSERS_LIST = Arrays.asList(BrowserType.FIREFOX, BrowserType.SAFARI, BrowserType.CHROME, "chrome-debug", BrowserType.IE);
-    private final static Pattern SET_SYSTEM_PROPERTY_REGEXP = Pattern.compile("^-D([^=]+)=(.*)$", Pattern.CASE_INSENSITIVE);
+    private final static Pattern SET_PROPERTY_REGEXP = Pattern.compile("^-(C|D)([^=]+)=(.*)$", Pattern.CASE_INSENSITIVE);
 
     public static void main(String[] args) throws Exception {
         SeleniumJavaRobot seleniumJavaRobot = new SeleniumJavaRobot();
-        String browser;
+        DesiredCapabilities capabilities = new DesiredCapabilities();
         seleniumJavaRobot.autoRestart = false;
         if (OS.isFamilyMac()) {
-            browser = "safari";
+            capabilities.setBrowserName(BrowserType.SAFARI);
         } else {
-            browser = "firefox";
+            capabilities.setBrowserName(BrowserType.FIREFOX);
         }
         seleniumJavaRobot.url = "http://localhost:7777/__attester__/slave.html";
         String usageString = String
-                .format("Usage: selenium-java-robot [options]\nOptions:\n  --auto-restart\n  --url <url> [default: %s]\n  --browser <browser> [default: %s, accepted values: %s]\n  -DpropertyName=value",
-                        seleniumJavaRobot.url, browser, BROWSERS_LIST.toString());
+                .format("Usage: selenium-java-robot [options]\nOptions:\n  --auto-restart\n  --url <url> [default: %s]\n  --browser <browser> [default: %s, accepted values: %s]\n  -DpropertyName=value\n  -CwebDriverCapability=value",
+                        seleniumJavaRobot.url, capabilities.getBrowserName(), BROWSERS_LIST.toString());
         for (int i = 0, l = args.length; i < l; i++) {
             String curParam = args[i];
             if ("--browser".equalsIgnoreCase(curParam) && i + 1 < l) {
-                browser = args[i + 1];
+                capabilities.setBrowserName(args[i + 1]);
+                if ("chrome-debug".equalsIgnoreCase(capabilities.getBrowserName())) {
+                    capabilities.setBrowserName(BrowserType.CHROME);
+                    capabilities.setCapability(DebuggableChrome.CAPABILITY, true);
+                }
                 i++;
             } else if ("--url".equalsIgnoreCase(curParam) && i + 1 < l) {
                 seleniumJavaRobot.url = args[i + 1];
@@ -59,9 +64,13 @@ public class Main {
                 System.out.println(usageString);
                 return;
             } else {
-                Matcher matcher = SET_SYSTEM_PROPERTY_REGEXP.matcher(curParam);
+                Matcher matcher = SET_PROPERTY_REGEXP.matcher(curParam);
                 if (matcher.matches()) {
-                    System.setProperty(matcher.group(1), matcher.group(2));
+                    if ("C".equalsIgnoreCase(matcher.group(1))) {
+                        capabilities.setCapability(matcher.group(2), matcher.group(3));
+                    } else {
+                        System.setProperty(matcher.group(2), matcher.group(3));
+                    }
                 } else {
                     System.err.println("Unknown command line option: " + curParam);
                     System.err.println(usageString);
@@ -69,7 +78,7 @@ public class Main {
                 }
             }
         }
-        seleniumJavaRobot.robotizedBrowserFactory = LocalRobotizedBrowserFactory.createRobotizedWebDriverFactory(browser);
+        seleniumJavaRobot.robotizedBrowserFactory = LocalRobotizedBrowserFactory.createRobotizedWebDriverFactory(capabilities);
         seleniumJavaRobot.start();
         closeOnStreamEnd(seleniumJavaRobot, System.in);
         closeOnProcessEnd(seleniumJavaRobot);
